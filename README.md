@@ -1,8 +1,6 @@
 # GMMC
 
-Pytorch Implementation for the paper ["Generative Max-Mahalanobis Classifiers for Image Classification, Generation and More"](https://arxiv.org/abs/2101.00122).
-
-Thanks to the authors of the paper "JEM: Your classifier is secretly an energy based model and you should treat it like one"[[Paper](https://openreview.net/forum?id=Hkxzx0NtDB), [Code](https://github.com/wgrathwohl/JEM)]. Our code is based on JEM.
+Pytorch Implementation for the paper ["Generative Max-Mahalanobis Classifiers for Image Classification, Generation and More"](https://arxiv.org/abs/2101.00122). The implementation is based on [JEM](https://github.com/wgrathwohl/JEM) of Grathwohl et al. (2020).
 
 # Installation
 
@@ -77,16 +75,14 @@ python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval cond_samples --n_s
 ```
 
 
-# Citing this Work
+# Citation
 
-If you find this work useful and use it on your own research, please concider citing our paper
+If you find this work useful and use it on your own research, please concider citing this paper
 ```
-@article{yang2021generative,
+@article{yang2021gmmc,
     title={Generative Max-Mahalanobis Classifiers for Image Classification, Generation and More},
     author={Xiulong Yang and Hui Ye and Yang Ye and Xiang Li and Shihao Ji},
-    year={2021},
-    eprint={2101.00122},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
+    journal={arXiv preprint arXiv:2101.00122},
+    year={2021}
 }
 ```
