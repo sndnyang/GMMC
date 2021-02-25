@@ -77,7 +77,7 @@ python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval cond_samples --n_s
 
 # Citation
 
-If you find this work useful and use it on your own research, please concider citing this paper
+If you found this work useful and used it on your own research, please concider citing this paper.
 ```
 @article{yang2021gmmc,
     title={Generative Max-Mahalanobis Classifiers for Image Classification, Generation and More},
