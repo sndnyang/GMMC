@@ -269,7 +269,7 @@ if __name__ == "__main__":
     # optimization
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--decay_epochs", nargs="+", type=int, default=[50, 60, 100], help="decay learning rate by decay_rate at these epochs")
-    parser.add_argument("--decay_rate", type=float, default=.1, help="learning rate decay multiplier")
+    parser.add_argument("--decay_rate", type=float, default=.3, help="learning rate decay multiplier")
     parser.add_argument("--labels_per_class", type=int, default=-1, help="number of labeled examples per class, if zero then use all labels")
     parser.add_argument("--optimizer", type=str, default="adam", help="adam, sgd, adam_one, sgd_one")
     parser.add_argument("--batch_size", type=int, default=64)
