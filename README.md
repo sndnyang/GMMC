@@ -64,17 +64,12 @@ python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval cond_samples  --gp
 
 To generate new unconditional samples
 ```shell script
-python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval uncond_samples --n_sample_steps {THE_MORE_THE_BETTER (10000 minimum)} --buffer_size 100000 --n_steps 40 --print_every 100 --gpu-id 0
+python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval uncond_samples --n_sample_steps 100 --buffer_size 100 --n_steps 40 --print_every 10 --gpu-id 0
 ```
 
 To generate new conditional samples
 
 ```shell script
-python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval cond_samples --n_sample_steps {THE_MORE_THE_BETTER (10000 minimum)} --buffer_size 100000 --n_steps 40 --print_every 100 --fresh_samples --gpu-id 0
-```
-
-To generate new unconditional samples
-```shell script
-python eval_gmmc.py --load_path model1/best_valid_ckpt.pt --eval uncond_samples --n_sample_steps 200 --buffer_size 100 --n_steps 40 --print_every 10 --sgld_lr 1 --gamma 5 --inject --gpu-id 7
+python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval cond_samples --n_sample_steps 100 --buffer_size 100 --n_steps 40 --print_every 10 --fresh_samples --gpu-id 0
 ```
 
