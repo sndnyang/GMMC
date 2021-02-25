@@ -18,7 +18,7 @@ To train a model on CIFAR10 as in the paper, please refer to scripts/cifar10_dis
 ```markdown
 python train_gmmc.py --lr=.0001 --dataset=cifar10 --optimizer=adam \
   --sigma=.03 --width=10 --depth=28 --plot_uncond \
-  --print_every=100 --n_epochs=150 \
+  --print_every=100 --n_epochs=100 \
   --warmup_iters 1000 \
   --log_arg=MMC_gen-sgld_lr-mu_c-n_steps-buffer_size  \
   --sgld_lr=1 --log_dir=./run \
@@ -31,7 +31,7 @@ python train_gmmc.py --lr=.0001 --dataset=cifar10 --optimizer=adam \
   --reinit_freq=0.025 \
   --class_cond_p_x_sample \
   --vis \
-  --decay_epochs 40 80 120 \
+  --decay_epochs 30 50 80 \
   --beta=0.5 \
   --generative \
   --start_generative=0
