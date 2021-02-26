@@ -2,6 +2,22 @@
 
 Pytorch Implementation for the paper ["Generative Max-Mahalanobis Classifiers for Image Classification, Generation and More"](https://arxiv.org/abs/2101.00122). The implementation is based on [JEM](https://github.com/wgrathwohl/JEM) of Grathwohl et al. (2020).
 
+
+
+## Overview
+
+The pipeline of GMMC:
+
+![pipeline](figs/GMMC.png)
+
+
+
+The motivation comes from the latent feature spaces:
+
+<img src="figs/tSNE.png" alt="latent space" style="zoom:50%;" />
+
+
+
 # Installation
 
 ```markdown
@@ -73,6 +89,15 @@ To generate new conditional samples
 ```shell script
 python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval cond_samples --n_sample_steps 100 --buffer_size 100 --n_steps 40 --print_every 10 --fresh_samples --gpu-id 0
 ```
+
+
+
+## Generated Samples
+
+| ![a](figs/topk_0.png) | ![a](figs/topk_1.png) | ![a](figs/topk_2.png) | ![a](figs/topk_3.png) | ![a](figs/topk_4.png) |
+| --------------------- | --------------------- | --------------------- | --------------------- | --------------------- |
+| ![a](figs/topk_5.png) | ![a](figs/topk_6.png) | ![a](figs/topk_7.png) | ![a](figs/topk_8.png) | ![a](figs/topk_9.png) |
+
 
 
 # Citation
