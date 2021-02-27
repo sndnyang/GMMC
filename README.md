@@ -4,17 +4,13 @@ Pytorch Implementation for the paper ["Generative Max-Mahalanobis Classifiers fo
 
 
 
-## Overview
+<!--## Overview
 
 The pipeline of GMMC:
 
 ![pipeline](figs/GMMC.png)
 
-
-
-The motivation comes from the latent feature spaces:
-
-<img src="figs/tSNE.png" alt="latent space" style="zoom:50%;" />
+<img src="figs/tSNE.png" width="70%" alt="latent space" style="zoom:50%;" /> -->
 
 
 
@@ -92,12 +88,12 @@ python eval_gmmc.py --load_path /PATH/TO/YOUR/MODEL.pt --eval cond_samples --n_s
 
 
 
-## Generated Samples
+<!-- ## Generated Samples
 
 | ![a](figs/topk_0.png) | ![a](figs/topk_1.png) | ![a](figs/topk_2.png) | ![a](figs/topk_3.png) | ![a](figs/topk_4.png) |
 | --------------------- | --------------------- | --------------------- | --------------------- | --------------------- |
 | ![a](figs/topk_5.png) | ![a](figs/topk_6.png) | ![a](figs/topk_7.png) | ![a](figs/topk_8.png) | ![a](figs/topk_9.png) |
-
+-->
 
 
 # Citation
