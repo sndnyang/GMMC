@@ -103,7 +103,7 @@ If you found this work useful and used it on your own research, please concider 
 @article{yang2021gmmc,
     title={Generative Max-Mahalanobis Classifiers for Image Classification, Generation and More},
     author={Xiulong Yang and Hui Ye and Yang Ye and Xiang Li and Shihao Ji},
-    journal={arXiv preprint arXiv:2101.00122},
+    journal={The European Conference on Machine Learning (ECML)},
     year={2021}
 }
 ```
