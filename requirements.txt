@@ -1,11 +1,11 @@
 GPUtil==1.4.0
 numpy==1.17.4
 scipy==0.19.1
-Pillow==6.2.1
+Pillow==8.2.0
 tensorboardX==1.6
 torch==1.5.1
 torchvision==0.6.1
 tqdm==4.43.0
 # tensorflow 1.12 - 1.15 should work
-tensorflow-gpu==1.15.0
+# tensorflow-gpu==1.15.0
 tensorboard==1.15.0
