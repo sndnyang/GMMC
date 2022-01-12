@@ -215,7 +215,8 @@ def lda_eval_classification(f, data_loader, lgm_loss, set_name, epoch, args=None
         top1 = AverageMeter('Acc@1', ':6.2f')
         top5 = AverageMeter('Acc@5', ':6.2f')
 
-    for x, y in data_loader:
+    for data in data_loader:
+        x, y = data[:2]
         x, y = x.to(device), y.to(device)
         try:
             features = f.feature(x)

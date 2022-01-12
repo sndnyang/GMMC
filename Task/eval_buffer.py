@@ -36,7 +36,7 @@ def eval_fid(replay_buffer, args):
     def rescale_im(im):
         return np.clip(im * 256, 0, 255).astype(np.uint8)
 
-    for data_corrupt, data, label_gt in tqdm(test_dataloader):
+    for data_corrupt, data, label_gt in test_dataloader:
         data = data.numpy()
         test_ims.extend(list(rescale_im(data)))
 

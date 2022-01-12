@@ -17,23 +17,39 @@ logger.setLevel(logging.INFO)
 wlog = logger.info
 
 
+def init_wandb(args):
+    import wandb
+    wandb.init(project='RefineEBM')
+    name = args.note
+    if name:
+        wandb.run.name = args.note + str(os.getpid())
+        wandb.run.save()
+    args.pid = os.getpid()
+    args.node = os.uname().nodename.split('.')[0]
+    wandb.config.update(args)
+
+
 def init_env(args, exp_logger):
     # 1. debug -> num_workers
     init_debug(args)
+    args.vis = not args.novis
 
-    # 2. select gpu -> TODO: multiple GPUs
-    auto_select_gpu()
+    # 2. select gpu
+    auto_select_gpu(args)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
     args.dir_path = form_dir_path(args.exp_name, args)
     set_file_logger(exp_logger, args)
     init_logger_board(args)
 
+    args.n_classes = 10
+    if args.dataset == "cifar100":
+        args.n_classes = 100
+    if args.dataset == "tinyimagenet":
+        args.n_classes = 200
+
 
 def init_debug(args):
-    # verify the debug mode
-    # pytorch loader has a parameter num_workers
-    # in debug mode, it should be 0
-    # so set args.debug
+    # verify the debug mode. pytorch loader has a parameter num_workers, in debug mode, it should be 0  so set args.debug
     gettrace = getattr(sys, 'gettrace', None)
     if gettrace is None:
         print('No sys.gettrace')
@@ -54,7 +70,7 @@ def auto_select_gpu(args):
         wlog("please install GPUtil for automatically selecting GPU")
         args.gpu_id = '1'
         return
-        
+
     if len(GPUtil.getGPUs()) == 0:
         return
     id_list = GPUtil.getAvailable(order="load", maxLoad=0.7, maxMemory=0.9, limit=8)
@@ -98,9 +114,7 @@ def set_file_logger(exp_logger, args):
     formatter = logging.Formatter("%(asctime)s - %(filename)s[line:%(lineno)d]: %(message)s")
     fh.setFormatter(formatter)
     exp_logger.addHandler(fh)
-    if os.name != 'nt':
-        signal.signal(signal.SIGQUIT, partial(rename_quit_handler, args))
-        signal.signal(signal.SIGTERM, partial(delete_quit_handler, args))
+    copy_script_to_folder(sys.argv[0], args.dir_path)
 
 
 def list_args(args):
@@ -118,6 +132,7 @@ def form_dir_path(task, args):
                 --log-arg: the details shown in the name of your directory where logs are.
                 --log-dir: the directory to save logs, default is ~/projecct/runs.
     """
+    args.pid = os.getpid()
     args_dict = vars(args)
     if "log_dir" not in args_dict:
         args.log_dir = ""
@@ -126,6 +141,8 @@ def form_dir_path(task, args):
 
     run_time = time.strftime('%m%d%H%M%S', time.localtime(time.time()))
     log_arg_list = []
+    if args.debug:
+        task += '-debug'
     for e in args.log_arg.split("-"):
         v = args_dict.get(e, None)
         if v is None:
@@ -135,7 +152,7 @@ def form_dir_path(task, args):
         else:
             log_arg_list.append("%s=%s" % (e, str(v)))
     args.exp_marker = exp_marker = "-".join(log_arg_list)
-    exp_marker = "%s/%s/%s@%s@%d" % (task, args.dataset, run_time, exp_marker, os.getpid())
+    exp_marker = "%s/%s/%s@%s@%d" % (args.dataset, task, run_time, exp_marker, os.getpid())
     base_dir = os.path.join(os.environ['HOME'], 'project/runs') if not args.log_dir else args.log_dir
     dir_path = os.path.join(base_dir, exp_marker)
     return dir_path
@@ -170,9 +187,33 @@ def vis_step(writer, step, dicts):
         writer.add_scalar(k, dicts[k], step)
 
 
+def copy_script_to_folder(caller_path, folder):
+    '''copy script'''
+    script_filename = caller_path.split('/')[-1]
+    script_relative_path = os.path.join(folder, script_filename)
+    shutil.copy(caller_path, script_relative_path)
+    for file in ['utils.py']:
+        shutil.copy(file, folder)
+
+
+def time_string():
+    '''convert time format'''
+    ISOTIMEFORMAT='%Y-%m-%d %X'
+    string = '[{}]'.format(time.strftime( ISOTIMEFORMAT, time.gmtime(time.time()) ))
+    return string
+
+
+def convert_secs2time(epoch_time):
+    need_hour = int(epoch_time / 3600)
+    need_mins = int((epoch_time - 3600*need_hour) / 60)
+    need_secs = int(epoch_time - 3600*need_hour - 60*need_mins)
+    return need_hour, need_mins, need_secs
+
+
 class AverageMeter:
     """Computes and stores the average and current value"""
-    def __init__(self, name, fmt=':f'):
+
+    def __init__(self, name='', fmt=':f'):
         self.name = name
         self.fmt = fmt
         self.reset()
@@ -192,13 +233,3 @@ class AverageMeter:
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
-
-
-def delete_quit_handler(g_var, signal, frame):
-    shutil.rmtree(g_var.dir_path)
-    sys.exit(0)
-
-
-def rename_quit_handler(g_var, signal, frame):
-    os.rename(g_var.dir_path, g_var.dir_path + "_stop")
-    sys.exit(0)

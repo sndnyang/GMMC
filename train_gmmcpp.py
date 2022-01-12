@@ -22,11 +22,11 @@ import wandb
 from tqdm import tqdm
 from ExpUtils import *
 from utils import *
-from get_data import get_data
 from Task.eval_buffer import  eval_fid
 from models.mmc_models import *
 from Utils.mmc_utils import cal_center
 from LDALayer import LDALayer
+from get_data import get_data
 t.backends.cudnn.benchmark = True
 t.backends.cudnn.enabled = True
 seed = 1
@@ -251,7 +251,7 @@ def main(arg):
                 L += l_p_x_given_y
 
             # break if the loss diverged...easier for poppa to run experiments this way
-            if L.abs().item() > 1e8:
+            if L.abs().item() > 1e5:
                 print("BAD BOIIIIIIIIII")
                 # 1 / 0
                 # just return
@@ -372,6 +372,8 @@ if __name__ == "__main__":
     parser.add_argument("--method", type=str, default="mmc", help="use mmc(fixed mu), but we can also implement lda, dmmc, emmc")
     parser.add_argument("--mu_c", type=float, default=10, help="the constant C for generating means of centers in MMC")
 
+    parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--exp_name", type=str, default="GMMCPP", help="exp name, for description")
     parser.add_argument("--no_fid", action="store_true", help="If set, evaluate FID/Inception Score")
     parser.add_argument("--no_wandb", action="store_true", help="If set, evaluate FID/Inception Score")
     parser.add_argument("--novis", action="store_true", help="")
@@ -380,7 +382,9 @@ if __name__ == "__main__":
     parser.add_argument("--note", type=str, default="")
 
     args = parser.parse_args()
+    assert args.cls or args.gen
     init_env(args, logger)
+    args.save_dir = args.dir_path
     print = wlog
     print(' '.join(sys.argv))
     print(args.dir_path)
