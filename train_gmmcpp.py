@@ -30,6 +30,7 @@ from get_data import get_data
 t.backends.cudnn.benchmark = True
 t.backends.cudnn.enabled = True
 seed = 1
+conditionals = []
 
 
 def get_model_and_buffer(args, device):
@@ -52,10 +53,29 @@ def get_model_and_buffer(args, device):
     return f, replay_buffer, lgm_loss
 
 
+def init_random(arg, bs):
+    global conditionals
+    n_ch = 3
+    if arg.dataset == 'svhn':
+        size = [3, 32, 32]
+        im_sz = 32
+    else:
+        size = [3, 32, 32]
+        im_sz = 32
+    new = t.zeros(bs, n_ch, im_sz, im_sz)
+    y = np.zeros(bs)
+    for i in range(bs):
+        index = np.random.randint(arg.n_classes)
+        dist = conditionals[index]
+        new[i] = dist.sample().view(size)
+        y[i] = index
+    return t.clamp(new, -1, 1).cpu(), t.LongTensor(y)
+
+
 def get_sample_q(args, device):
     def sample_p_0(replay_buffer, bs, y=None):
         if len(replay_buffer) == 0:
-            return init_random_x_y(args, bs), []
+            return init_random(args, bs), []
         buffer_size = len(replay_buffer[0]) if y is None else len(replay_buffer[0]) // args.n_classes
         inds = t.randint(0, buffer_size, (bs,))
         if y is not None:
@@ -63,7 +83,7 @@ def get_sample_q(args, device):
             inds = y.cpu() * buffer_size + inds
         buffer_x = replay_buffer[0][inds]
         buffer_y = replay_buffer[1][inds]
-        random_samples = init_random_x_y(args, bs)
+        random_samples = init_random(args, bs)
         choose_random_y = (t.rand(bs) < args.reinit_freq)
         choose_random_x = choose_random_y.float()[:, None, None, None]
         samples = choose_random_x * random_samples[0] + (1 - choose_random_x) * buffer_x
@@ -76,7 +96,7 @@ def get_sample_q(args, device):
         scratch (i.e. replay_buffer==[]).  See test_wrn_ebm.py for example.
         """
         # eval and train
-        f.eval()
+        # f.eval()
         lgm.eval()
         # get batch size
         bs = args.batch_size if y is None else y.size(0)
@@ -109,23 +129,6 @@ def get_sample_q(args, device):
     return sample_q
 
 
-def init_random(arg, bs):
-    global conditionals
-    n_ch = 3
-    if arg.dataset == 'svhn':
-        size = [3, 32, 32]
-        im_sz = 32
-    else:
-        size = [3, 32, 32]
-        im_sz = 32
-    new = t.zeros(bs, n_ch, im_sz, im_sz)
-    for i in range(bs):
-        index = np.random.randint(arg.n_classes)
-        dist = conditionals[index]
-        new[i] = dist.sample().view(size)
-    return t.clamp(new, -1, 1).cpu()
-
-
 def init_from_centers(arg):
     global conditionals
     from torch.distributions.multivariate_normal import MultivariateNormal
@@ -134,17 +137,19 @@ def init_from_centers(arg):
         size = [3, 32, 32]
     else:
         size = [3, 32, 32]
-    centers = t.load('%s_mean.pt' % arg.dataset)
-    covs = t.load('%s_cov.pt' % arg.dataset)
+    centers = t.load('../%s_mean.pt' % arg.dataset)
+    covs = t.load('../%s_cov.pt' % arg.dataset)
 
     buffer = []
+    y = np.zeros(bs)
     for i in range(arg.n_classes):
         mean = centers[i].to(arg.device)
         cov = covs[i].to(arg.device)
         dist = MultivariateNormal(mean, covariance_matrix=cov + 1e-4 * t.eye(int(np.prod(size))).to(arg.device))
         buffer.append(dist.sample((bs // arg.n_classes,)).view([bs // arg.n_classes] + size).cpu())
         conditionals.append(dist)
-    return t.clamp(t.cat(buffer), -1, 1)
+        y[i * bs // args.n_classes:(i + 1) * bs // args.n_classes] = i
+    return t.clamp(t.cat(buffer), -1, 1), t.LongTensor(y)
 
 
 def main(arg):
@@ -177,6 +182,7 @@ def main(arg):
         fid = eval_fid(f, replay_buffer, arg, device, ratio=0.9, eval='fid')
 
     prev_fid = fid
+    inc_score = 0
     print('IS {}, fid {}'.format(0, fid))
     # optimizer
     params = f.parameters()
@@ -194,6 +200,7 @@ def main(arg):
     cur_iter = 0
     # trace learning rate
     new_lr = arg.lr
+    best_fid = 10000
     for epoch in range(arg.n_epochs):
         if epoch in arg.decay_epochs:
             for param_group in optim.param_groups:
@@ -209,7 +216,7 @@ def main(arg):
 
             L = 0.
             if arg.gen:
-                x_p_d, y_p_lab, x_idx = dload_train.__next__()
+                x_p_d, y_p_d, x_idx = dload_train.__next__()
                 x_p_d = x_p_d.to(device)
                 x_p_d += arg.sigma * t.randn_like(x_p_d)
 
@@ -271,11 +278,11 @@ def main(arg):
                     else:
                         x_q, y_q = sample_q(f, replay_buffer, lgm_loss)
 
-                    plot('{}/x_q_{}_{:>06d}.png'.format(arg.save_dir, epoch, i), x_q)
+                    plot('{}/samples/x_q_{}_{:>06d}.png'.format(arg.save_dir, epoch, i), x_q)
                 if arg.plot_cond:  # generate class-conditional samples
                     y = t.arange(0, arg.n_classes)[None].repeat(arg.n_classes, 1).transpose(1, 0).contiguous().view(-1).to(device)
                     x_q_y, _ = sample_q(f, replay_buffer, lgm_loss, y=y)
-                    plot('{}/x_q_y{}_{:>06d}.png'.format(arg.save_dir, epoch, i), x_q_y)
+                    plot('{}/samples/x_q_y{}_{:>06d}.png'.format(arg.save_dir, epoch, i), x_q_y)
 
         if epoch % arg.ckpt_every == 0 and arg.gen and epoch >= 30:
             # save less
@@ -288,18 +295,33 @@ def main(arg):
                 # validation set
                 correct, loss = lda_eval_classification(f, dload_valid, lgm_loss, "Valid", epoch, arg, wlog)
                 t_c = lda_eval_classification(f, dload_test, lgm_loss, "Test", epoch, arg, wlog)
+                metrics = {'Acc/Val': t_c[0], 'Loss/Val': t_c[1]}
                 if correct > best_valid_acc:
                     best_valid_acc = correct
                     print("Best Valid!: {}".format(correct))
                     checkpoint(f, replay_buffer, lgm_loss, "best_valid_ckpt.pt", arg, device)
+
+            if arg.gen and epoch % 5 == 0:
+                fid = eval_fid(replay_buffer, arg)
+                if fid > 0:
+                    prev_fid = fid
+                else:
+                    fid = prev_fid
+                print('IS {}, fid {}'.format(inc_score, fid))
+                arg.writer.add_scalar('Gen/IS', inc_score, epoch)
+                arg.writer.add_scalar('Gen/FID', fid, epoch)
+                metrics['Gen/FID'] = fid
+                if fid < best_fid:
+                    best_fid = fid
+                    checkpoint(f, replay_buffer, lgm_loss, "best_fid_ckpt.pt", arg, device)
             f.train()
             lgm_loss.train()
-            metrics = {'Acc/Val': correct, 'Loss/Val': loss}
 
             if not arg.debug and not arg.no_wandb:
                 init_wandb(arg)
                 wandb.log(metrics)
-            wandb.log(metrics)
+            if not arg.no_wandb:
+                wandb.log(metrics)
 
         checkpoint(f, replay_buffer, lgm_loss, "last_ckpt.pt", arg, device)
 
@@ -335,10 +357,10 @@ if __name__ == "__main__":
 
     # regularization
     parser.add_argument("--dropout_rate", type=float, default=0.0)
-    parser.add_argument("--sigma", type=float, default=3e-2, help="stddev of gaussian noise to add to input, .03 works but .1 is more stable")
-    parser.add_argument("--weight_decay", type=float, default=0.0)
+    parser.add_argument("--sigma", type=float, default=0, help="stddev of gaussian noise to add to input, .03 works but .1 is more stable")
+    parser.add_argument("--weight_decay", type=float, default=4e-4)
     # network
-    parser.add_argument("--norm", type=str, default='batch', choices=[None, "batch", "instance", "layer", "act"], help="norm to add to weights, none works fine")
+    parser.add_argument("--norm", type=str, default=None, choices=[None, "batch", "instance", "layer", "act"], help="norm to add to weights, none works fine")
     # EBM specific
     parser.add_argument("--n_steps", type=int, default=20, help="number of steps of SGLD per iteration, 20 works for PCD")
     parser.add_argument("--width", type=int, default=10, help="WRN width parameter")
@@ -385,6 +407,7 @@ if __name__ == "__main__":
     assert args.cls or args.gen
     init_env(args, logger)
     args.save_dir = args.dir_path
+    os.makedirs('{}/samples'.format(args.dir_path))
     print = wlog
     print(' '.join(sys.argv))
     print(args.dir_path)
