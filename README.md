@@ -48,11 +48,12 @@ python train_gmmc.py --lr=.0001 --dataset=cifar10 --optimizer=adam \
   --start_generative=0
 ```
 
-A pretrained model on CIFAR10 can be found at
+Two pretrained models on CIFAR10 can be found at
 
-https://drive.google.com/file/d/1n13S_Ni_xg8tMBjmYNRnk97ej4UlMTuy/view?usp=sharing (1.3GB), Accuracy 94.08, FID 37.0
+https://mygsu-my.sharepoint.com/:f:/g/personal/xyang22_gsu_edu/EsA3KMmmK7hOqZST2GufHYUBLxAoXPtKDCMzJv1x20W6HQ?e=N7785i
 
-https://drive.google.com/file/d/1Ywmg-aIzpfl1s9cgeiynLSMawkYEm2H4/view?usp=sharing (1.3GB), Accuracy 92.51, FID 35.96
+A: Accuracy 94.08, FID 37.0
+B: Accuracy 92.51, FID 35.96
 
 ## Evaluation
 
